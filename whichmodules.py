@@ -22,14 +22,23 @@
 #  
 #  
 
+#This could be used to check the modules after they are loaded
 
-import os
+import os, re
 import subprocess
 
-sound = os.path.basename(subprocess.check_output(['readlink', '/sys/class/sound/card0/device/driver/module']))
-ethernet = os.path.basename(subprocess.check_output(['readlink', '/sys/class/net/eth0/device/driver/module']))
-wireless = os.path.basename(subprocess.check_output(['readlink', '/sys/class/net/wlan0/device/driver/module']))
+sound = os.path.basename(subprocess.check_output(['readlink', '/sys/class/sound/card0/device/driver/module'])).strip('\n')
+ethernet = os.path.basename(subprocess.check_output(['readlink', '/sys/class/net/eth0/device/driver/module'])).strip('\n')
+wireless = os.path.basename(subprocess.check_output(['readlink', '/sys/class/net/wlan0/device/driver/module'])).strip('\n')
 
-print "The module loaded for your sound card is:", sound 
-print "The module loaded for your ethernet card is:", ethernet
-print "The driver loaded for your wireless card is:", wireless
+command = {}
+
+command['sound'] = 'modinfo ' + sound + ' | grep "description:" --color=never'
+command['ethernet'] = 'modinfo ' + ethernet + ' | grep "description:" --color=never'
+command['wireless'] = 'modinfo ' + wireless + ' | grep "description:" --color=never'
+
+print "The module loaded for your sound card is:\n", sound, '(' + re.sub('description:( *)', '', subprocess.check_output(command['sound'], shell=True).strip('\n')) + ')'
+print
+print "The module loaded for your ethernet card is:\n", ethernet, '(' + re.sub('description:( *)', '', subprocess.check_output(command['ethernet'], shell=True).strip('\n')) + ')'
+print
+print "The driver loaded for your wireless card is:\n", wireless, '(' + re.sub('description:( *)', '', subprocess.check_output(command['wireless'], shell=True).strip('\n')) + ')'
