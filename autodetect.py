@@ -37,12 +37,13 @@ def findmodules():
         if os.geteuid() != 0:
             print "Can't write module table since you are not root"
             sys.exit(1)
+        print "Module table doesn't exist: regenerating..."
         p = subprocess.Popen("depmod")
         p.wait()
     try:
         file = open(modules_alias, 'r')
     except IOError:
-        print "Error: That's strange, the module table should exist..."
+        print "Error: That's strange, the module table should exist"
         sys.exit(1)
     module_list = file.readlines()
     for i in range(len(module_list)):
@@ -76,15 +77,17 @@ if __name__ == '__main__':
         print "This script was developed for Linux"
         sys.exit(1)
     try:
-        subprocess.check_output("lspci")
+        subprocess.call(["depmod", "--version"])
     except OSError:
         print "Missing Linux command"
         sys.exit(1)
     try:
-        subprocess.check_output("depmod")
+        subprocess.call(["lspci", "--version"])
     except OSError:
         print "Missing Linux command"
         sys.exit(1)
+    
+    print
     
     #Now start looking for those modules
     findmodules()
