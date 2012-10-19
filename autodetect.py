@@ -71,23 +71,18 @@ def findmodules():
 
 if __name__ == '__main__':
     
+    #First make sure we are in the right environment
     if not sys.platform.lower().startswith("linux"):
         print "This script was developed for Linux"
         sys.exit(1)
-    
     try:
-        subprocess.check_output(["which", "which"])
-    except:
+        subprocess.check_output("lspci")
+    except OSError:
         print "Missing Linux command"
         sys.exit(1)
     try:
-        subprocess.check_output(["which", "lspci"])
-    except:
-        print "Missing Linux command"
-        sys.exit(1)
-    try:
-        subprocess.check_output(["which", "depmod"])
-    except:
+        subprocess.check_output("depmod")
+    except OSError:
         print "Missing Linux command"
         sys.exit(1)
     
