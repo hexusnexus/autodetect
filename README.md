@@ -1,4 +1,0 @@
-autodetect
-==========
-
-Autodetect Python Script

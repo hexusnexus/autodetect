@@ -1,0 +1,4 @@
+autodetect.py
+
+This is a simple script in Python that uses the Linux commands to 
+autodetect hardware and output the modules needed.
