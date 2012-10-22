@@ -30,25 +30,26 @@ import subprocess
 def findmodules():
     print "Detecting modules..."
     print
-    
+    module_list = None
     kernel_version = subprocess.check_output(["uname","-r"]).strip('\n')
     modules_alias = "/lib/modules/" + kernel_version + "/modules.alias"
     if not os.path.exists(modules_alias):
         if os.geteuid() != 0:
-            print "Can't write module table since you are not root"
+            print "Don't have root priviledges: using stdout instead"
+            module_list = subprocess.check_output(["depmod","-n"]).split('\n')
+        if not module_list:
+            print "Module table doesn't exist: regenerating..."
+            subprocess.call("depmod")
+    if not module_list:
+        try:
+            file = open(modules_alias, 'r')
+        except IOError:
+            print "Error: That's strange, the module table should exist"
             sys.exit(1)
-        print "Module table doesn't exist: regenerating..."
-        p = subprocess.Popen("depmod")
-        p.wait()
-    try:
-        file = open(modules_alias, 'r')
-    except IOError:
-        print "Error: That's strange, the module table should exist"
-        sys.exit(1)
-    module_list = file.readlines()
+        module_list = file.readlines()
+        file.close()
     for i in range(len(module_list)):
         module_list[i] = module_list[i].strip('\n')
-    file.close()
     
     pci_data = subprocess.check_output(["lspci", "-n"]).split('\n')
     pci_data.remove('')

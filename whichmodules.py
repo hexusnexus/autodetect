@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  whichmodules.py
+#  multiple_cards.py
 #  
 #  Copyright 2012 Jason Benjamin <hexusnexus@gmail.com>
 #  
@@ -22,23 +22,107 @@
 #  
 #  
 
-#This could be used to check the modules after they are loaded
+
 
 import os, re
 import subprocess
 
-sound = os.path.basename(subprocess.check_output(['readlink', '/sys/class/sound/card0/device/driver/module'])).strip('\n')
-ethernet = os.path.basename(subprocess.check_output(['readlink', '/sys/class/net/eth0/device/driver/module'])).strip('\n')
-wireless = os.path.basename(subprocess.check_output(['readlink', '/sys/class/net/wlan0/device/driver/module'])).strip('\n')
+def list_modules(directory):
+    files = os.listdir(directory)
 
-command = {}
+    path_list =[]
+    
+    different=True
+    
+    filepath = None
+    
+    for fl in files:
+        fullpath =  os.path.join(directory, fl)
+	if os.path.islink(fullpath):
+	    for device in device_nums:
+		    if device == '00.0':
+			continue
+		    test = re.compile("(.*)"+device+"(.*)")
+		    if re.match(test, os.path.realpath(fullpath)):
+			path_list.append(os.path.realpath(fullpath))
+    newlist = []
+		    
+    for device in device_nums:
+	if device == '00.0':
+	    continue
+	firstcopy=False;
+	test = re.compile("(.*)"+device+"(.*)")
+	#print "Device: ", device
+	#a = [m.group(0) for m in (re.search(test, l) for l in path_list) if m]
+	#b = [m.group(1) for m in (re.search(test, l) for l in path_list) if m]
+	for l in path_list:
+	    if re.match(test, l) and not firstcopy:
+		firstcopy=True
+		newlist.append(l)
+    
+    path_list = set(newlist)  #eliminated duplicates
+    
+    drm_n=1;
+    sound_n=1;
+    eth_n=1
+    wlan_n=1
+    			
+    if "drm" in directory:
+	for path in path_list:
+	    pci_path = os.path.realpath(path)
+	    os.chdir(pci_path)
+	    if os.path.islink("./device/driver"):
+		module = os.path.basename(os.readlink("device/driver"))
+		print "Video card %d:" % drm_n, module
+		print re.sub('description:( *)', '', subprocess.check_output('modinfo ' + module + ' | grep "description:" --color=never', shell=True).strip('\n'))
+		print
+		drm_n+=1;
+    elif "sound" in directory:
+	for path in path_list:
+	    pci_path = os.path.realpath(path)
+	    os.chdir(pci_path)
+	    if os.path.islink("./device/driver"):
+		module = os.path.basename(os.readlink("device/driver"))
+		print "Sound card %d:" % sound_n, module
+		print re.sub('description:( *)', '', subprocess.check_output('modinfo ' + module + ' | grep "description:" --color=never', shell=True).strip('\n'))
+		print
+		sound_n+=1;
+    elif "net" in directory:
+	for path in path_list:
+	    pci_path = os.path.realpath(path)
+	    os.chdir(pci_path)
+	    if os.path.islink("./device/driver"):
+		module = os.path.basename(os.readlink("device/driver"))
+		if re.match("(.*)eth(.*)", path):
+		    print "Ethernet card %d:" % eth_n, module
+		    print re.sub('description:( *)', '', subprocess.check_output('modinfo ' + module + ' | grep "description:" --color=never', shell=True).strip('\n'))
+		    print
+		    eth_n+=1
+		else:
+		    print "Wireless card %d:" % wlan_n, module
+		    print re.sub('description:( *)', '', subprocess.check_output('modinfo ' + module + ' | grep "description:" --color=never', shell=True).strip('\n'))
+		    print
+		    wlan_n+=1
 
-command['sound'] = 'modinfo ' + sound + ' | grep "description:" --color=never'
-command['ethernet'] = 'modinfo ' + ethernet + ' | grep "description:" --color=never'
-command['wireless'] = 'modinfo ' + wireless + ' | grep "description:" --color=never'
+if __name__ == '__main__':
 
-print "The module loaded for your sound card is:\n", sound, '(' + re.sub('description:( *)', '', subprocess.check_output(command['sound'], shell=True).strip('\n')) + ')'
-print
-print "The module loaded for your ethernet card is:\n", ethernet, '(' + re.sub('description:( *)', '', subprocess.check_output(command['ethernet'], shell=True).strip('\n')) + ')'
-print
-print "The driver loaded for your wireless card is:\n", wireless, '(' + re.sub('description:( *)', '', subprocess.check_output(command['wireless'], shell=True).strip('\n')) + ')'
+    pci_data = subprocess.check_output(["lspci", "-n"]).split('\n')
+    pci_data.remove('')
+    
+    lspci_info = subprocess.check_output("lspci").split('\n')
+    lspci_info.remove('')
+    
+    device_nums = []
+
+    for device in pci_data:
+	important = device.split()[0]
+	important_nums = important.split(':')
+	device_nums.append(important_nums[1])
+    
+    list_modules("/sys/class/drm/")
+
+    list_modules("/sys/class/sound/")
+
+    list_modules("/sys/class/net/")
+    
+    
