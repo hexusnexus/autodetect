@@ -52,9 +52,6 @@ def list_modules(directory):
 	    continue
 	firstcopy=False;
 	test = re.compile("(.*)"+device+"(.*)")
-	#print "Device: ", device
-	#a = [m.group(0) for m in (re.search(test, l) for l in path_list) if m]
-	#b = [m.group(1) for m in (re.search(test, l) for l in path_list) if m]
 	for l in path_list:
 	    if re.match(test, l) and not firstcopy:
 		firstcopy=True
